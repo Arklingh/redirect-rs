@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: redirectrs
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: redirectrs
+      LANG: en_US.utf8
+      LC_ALL: en_US.utf8
+    command: ["postgres", "-c", "lc_messages=C"]
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
