@@ -9,7 +9,7 @@ services:
       LC_ALL: en_US.utf8
     command: ["postgres", "-c", "lc_messages=C"]
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
