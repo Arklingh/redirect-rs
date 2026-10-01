@@ -24,6 +24,14 @@ pub async fn get_link_by_shortcode(
         .await
 }
 
+pub async fn increment_click_count(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE links SET click_count = click_count + 1 WHERE id = $1")
+        .bind(id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
 pub async fn get_link_by_id(pool: &PgPool, id: Uuid) -> Result<Option<Link>, sqlx::Error> {
     sqlx::query_as::<_, Link>("SELECT * FROM links WHERE id = $1")
         .bind(id)
