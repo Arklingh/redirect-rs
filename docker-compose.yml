@@ -18,6 +18,16 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: .
@@ -25,10 +35,13 @@ services:
     environment:
       DATABASE_URL: postgres://redirectrs:devpassword@postgres:5432/redirectrs
       INGESTION_URL: http://ingestion:3001
+      REDIS_URL: redis://redis:6379
     ports:
       - "3000:3000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   ingestion:

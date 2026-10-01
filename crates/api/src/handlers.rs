@@ -54,10 +54,22 @@ pub async fn redirect(
     State(state): State<AppState>,
     Path(shortcode): Path<String>,
 ) -> Result<Redirect, ApiError> {
-    // NOTE: Redis caching of shortcode lookups is deferred.
-    let link = db::get_link_by_shortcode(&state.pool, &shortcode)
-        .await?
-        .ok_or(ApiError::NotFound)?;
+    let cached = match &state.cache {
+        Some(cache) => cache.get(&shortcode).await,
+        None => None,
+    };
+    let link = match cached {
+        Some(link) => link,
+        None => {
+            let link = db::get_link_by_shortcode(&state.pool, &shortcode)
+                .await?
+                .ok_or(ApiError::NotFound)?;
+            if let Some(cache) = &state.cache {
+                cache.set(&link).await;
+            }
+            link
+        }
+    };
 
     if link.expires_at.is_some_and(|t| t <= Utc::now()) {
         return Err(ApiError::Gone);
