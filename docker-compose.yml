@@ -12,5 +12,37 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U redirectrs -d redirectrs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      DATABASE_URL: postgres://redirectrs:devpassword@postgres:5432/redirectrs
+      INGESTION_URL: http://ingestion:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ingestion:
+    build:
+      context: .
+      target: ingestion
+    environment:
+      DATABASE_URL: postgres://redirectrs:devpassword@postgres:5432/redirectrs
+      PORT: "3001"
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:
