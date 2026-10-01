@@ -4,6 +4,7 @@ use axum::{
 };
 use sqlx::{PgPool, postgres::PgPoolOptions};
 
+mod cache;
 mod error;
 mod handlers;
 mod validation;
@@ -13,6 +14,7 @@ pub struct AppState {
     pub pool: PgPool,
     pub http: reqwest::Client,
     pub ingestion_url: Option<String>,
+    pub cache: Option<cache::LinkCache>,
 }
 
 pub fn app(state: AppState) -> Router {
@@ -44,10 +46,24 @@ async fn main() {
     let ingestion_url = std::env::var("INGESTION_URL")
         .ok()
         .filter(|s| !s.is_empty());
+    let cache = match std::env::var("REDIS_URL").ok().filter(|s| !s.is_empty()) {
+        Some(url) => match cache::LinkCache::connect(&url).await {
+            Ok(c) => {
+                tracing::info!("redis cache enabled");
+                Some(c)
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "redis unavailable, running without cache");
+                None
+            }
+        },
+        None => None,
+    };
     let state = AppState {
         pool,
         http: reqwest::Client::new(),
         ingestion_url,
+        cache,
     };
 
     let port: u16 = std::env::var("PORT")
@@ -75,6 +91,7 @@ mod tests {
             pool,
             http: reqwest::Client::new(),
             ingestion_url: None,
+            cache: None,
         }
     }
 

@@ -7,7 +7,7 @@ A URL shortener written in Rust. It creates short codes for long URLs, redirects
 Cargo workspace:
 
 - `crates/core` - shared domain logic (`redirect_core`).
-- `crates/api` - public HTTP service (axum, port 3000). Creates and looks up links in Postgres and serves redirects. Reports clicks to the ingestion service at `INGESTION_URL`.
+- `crates/api` - public HTTP service (axum, port 3000). Creates and looks up links in Postgres and serves redirects. Reports clicks to the ingestion service at `INGESTION_URL`. If `REDIS_URL` is set, redirects are served from a Redis cache (TTL up to 5 minutes, never past the link's expiry); Redis errors fall back to Postgres.
 - `crates/ingestion` - click ingestion service (axum, port 3001, `PORT` to override). Receives click events and stores them in the `clicks` table (created at startup if missing, no foreign key to `links`).
 - `crates/wasm-utils` - reserved, currently an unspecified and unused stub. Nothing depends on it.
 
@@ -33,7 +33,7 @@ Storage is PostgreSQL.
 
 ## Configuration
 
-See `.env.example`. Variables: `DATABASE_URL` (both services), `INGESTION_URL` (api), `PORT` (ingestion, default 3001).
+See `.env.example`. Variables: `DATABASE_URL` (both services), `INGESTION_URL` (api), `REDIS_URL` (api, optional), `PORT` (ingestion, default 3001).
 
 ## Running locally
 
